@@ -28,7 +28,11 @@ jobs:
       - name: Install Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20.9.0'
+          # vitest 4's rolldown-based bundler needs node:util's styleText
+          # export, added in 20.12 — package.json's engines floor (20.9.0)
+          # predates that and isn't actually sufficient. 22 LTS is safely
+          # within vitest's own supported range (^20 || ^22 || >=24).
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
