@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install ruff black mypy
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Format check (black)
+        run: black --check .
+
+      - name: Type-check (mypy on the new gateway package)
+        # --follow-imports=silent so pre-existing type gaps in the agent
+        # pipeline (which predates this pass and wasn't written for
+        # --strict) don't fail CI on code outside gateway/'s scope.
+        run: mypy gateway/ --ignore-missing-imports --follow-imports=silent
+
+      - name: Tests
+        run: pytest tests/ -v
+        env:
+          ANTHROPIC_API_KEY: sk-ant-ci-placeholder-0000000000000000
