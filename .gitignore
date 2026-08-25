@@ -35,3 +35,4 @@ frontend/.env*
 frontend/test-results/
 frontend/playwright-report/
 frontend/playwright/.cache/
+frontend/*.tsbuildinfo
