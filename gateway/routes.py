@@ -74,6 +74,7 @@ async def get_run_state(run_id: str) -> dict[str, Any]:
         "leads_curated": state.get("leads_curated", 0),
         "digests_generated": state.get("digests_generated", 0),
         "digests_delivered": state.get("digests_delivered", 0),
+        "last_completed_stage": state.get("last_completed_stage") or None,
         "error": state.get("error") or None,
     }
 

@@ -24,6 +24,7 @@ class PipelineState(TypedDict):
     digests_generated: int
     digests_delivered: int
     error: str
+    last_completed_stage: str
 
 
 def _wrap(agent_fn, step_name: str):
@@ -31,6 +32,11 @@ def _wrap(agent_fn, step_name: str):
         print(f"[coordinator] → {step_name}")
         try:
             new_state = agent_fn(state)
+            # A count field being 0 is ambiguous — "this stage hasn't run
+            # yet" and "this stage ran and found nothing" look identical.
+            # This marker is what actually distinguishes them for anyone
+            # polling live progress (the frontend's pipeline trail).
+            new_state = {**new_state, "last_completed_stage": step_name}
             save_state(state["run_id"], new_state)
             return new_state
         except Exception as exc:
@@ -72,6 +78,7 @@ def run_pipeline(run_id: str | None = None) -> PipelineRun:
         "digests_generated": 0,
         "digests_delivered": 0,
         "error": "",
+        "last_completed_stage": "",
     }
     app = build_graph()
     try:
