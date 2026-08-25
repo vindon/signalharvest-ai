@@ -14,8 +14,16 @@ services:
         value: production
       - key: SIGNALHARVEST_API_KEY
         generateValue: true
+      # Lower than the code's own default (40). Verified against a real
+      # production run: with only the keyless sources actually producing
+      # data (Reddit needs credentials, CFPB was empty that cycle), Google
+      # Trends signals topped out around score 34 — a 40 floor meant every
+      # run produced zero curated leads regardless of brand config, which
+      # is a bad first impression for a demo even though it's technically
+      # correct filtering. 10 reliably surfaces real watch-tier leads
+      # without passing pure noise (score-0 signals still get cut).
       - key: CURATOR_MIN_SCORE
-        value: "40"
+        value: "10"
       # SQLite lives on the container's local disk, which Render's free
       # plan doesn't persist across deploys/restarts — same tradeoff
       # already accepted for PulseGuard's Redis KV. The frontend's
