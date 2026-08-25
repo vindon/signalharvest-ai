@@ -12,7 +12,7 @@ from db.brand_store import delete_brand, get_all_brands, get_brand_by_id, upsert
 from db.digest_store import get_digest, list_digests
 from db.lead_store import list_leads_for_digest
 from db.signal_store import list_recent_signals
-from db.state_store import any_run_in_progress, get_run, list_runs
+from db.state_store import any_run_in_progress, get_run, list_runs, load_state
 from gateway.auth import require_api_key
 from gateway.limiter import limiter
 from schemas.brand import BrandSubscription
@@ -55,6 +55,27 @@ async def get_run_detail(run_id: str) -> dict[str, Any]:
     if run is None:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
     return run
+
+
+@router.get("/pipeline/runs/{run_id}/state", dependencies=[Depends(require_api_key)])
+async def get_run_state(run_id: str) -> dict[str, Any]:
+    """Live per-stage counters while a run is in progress — coordinator.py
+    saves the LangGraph state after every node, so this reflects real-time
+    progress (pipeline_runs itself only gets a start snapshot and an end
+    snapshot, not one per stage)."""
+    state = load_state(run_id)
+    if state is None:
+        raise HTTPException(status_code=404, detail=f"No state for run {run_id}")
+    return {
+        "run_id": run_id,
+        "signals_harvested": state.get("signals_harvested", 0),
+        "signals_classified": state.get("signals_classified", 0),
+        "signals_scored": state.get("signals_scored", 0),
+        "leads_curated": state.get("leads_curated", 0),
+        "digests_generated": state.get("digests_generated", 0),
+        "digests_delivered": state.get("digests_delivered", 0),
+        "error": state.get("error") or None,
+    }
 
 
 # ── Signal endpoints ─────────────────────────────────────────────────────────
