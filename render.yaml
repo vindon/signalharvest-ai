@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: signalharvest-gateway
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: ENVIRONMENT
+        value: production
+      - key: SIGNALHARVEST_API_KEY
+        generateValue: true
+      - key: CURATOR_MIN_SCORE
+        value: "40"
+      # SQLite lives on the container's local disk, which Render's free
+      # plan doesn't persist across deploys/restarts — same tradeoff
+      # already accepted for PulseGuard's Redis KV. The frontend's
+      # "Run pipeline" trigger exists partly to make re-seeding a fresh
+      # demo easy after a cold start wipes it.
+      - key: DATABASE_PATH
+        value: ./data/signalharvest.db
+      - key: DIGEST_OUTPUT_DIR
+        value: ./output/digests
+      # Set for real functionality after the first deploy (Dashboard →
+      # signalharvest-gateway → Environment):
+      #   ANTHROPIC_API_KEY        (required — powers Classifier + Curator)
+      #   REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET
+      #     (optional — Reddit signals are skipped gracefully if unset;
+      #     Trends/CFPB/RSS need no credentials at all)
+      #   ALLOWED_ORIGINS          (set once the Vercel frontend URL is known)
+      - key: ANTHROPIC_API_KEY
+        sync: false
