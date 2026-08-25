@@ -33,12 +33,16 @@ services:
         value: ./data/signalharvest.db
       - key: DIGEST_OUTPUT_DIR
         value: ./output/digests
+      # No browser calls this API directly — the frontend's server-side
+      # proxy holds SIGNALHARVEST_API_KEY and isn't subject to CORS — so
+      # this is defense-in-depth, not something the working app depends on.
+      - key: ALLOWED_ORIGINS
+        value: https://signalharvest-console.vercel.app
       # Set for real functionality after the first deploy (Dashboard →
       # signalharvest-gateway → Environment):
       #   ANTHROPIC_API_KEY        (required — powers Classifier + Curator)
       #   REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET
       #     (optional — Reddit signals are skipped gracefully if unset;
       #     Trends/CFPB/RSS need no credentials at all)
-      #   ALLOWED_ORIGINS          (set once the Vercel frontend URL is known)
       - key: ANTHROPIC_API_KEY
         sync: false
